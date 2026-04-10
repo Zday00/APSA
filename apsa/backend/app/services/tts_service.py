@@ -1,36 +1,20 @@
 """
-Service TTS (Text-to-Speech) — Kokoro-82M
-Voix française : ff_siwis
+Service TTS (Text-to-Speech) — Microsoft Edge TTS
+Voix française : fr-FR-DeniseNeural (féminine) ou fr-FR-HenriNeural (masculine)
+Gratuit, sans API key, qualité neurale.
 """
 import io
-import numpy as np
-import soundfile as sf
+import edge_tts
 
-_pipeline = None
-
-
-def _get_pipeline():
-    global _pipeline
-    if _pipeline is None:
-        from kokoro import KPipeline
-        _pipeline = KPipeline(lang_code="f")  # "f" = French
-    return _pipeline
+VOICE = "fr-FR-DeniseNeural"
 
 
 async def synthesize_speech(text: str) -> bytes:
-    """Convertit du texte en audio WAV (bytes) via Kokoro-82M."""
-    pipeline = _get_pipeline()
-
-    audio_chunks = []
-    for _, _, audio in pipeline(text, voice="ff_siwis", speed=1.0):
-        audio_chunks.append(audio)
-
-    if not audio_chunks:
-        raise ValueError("Kokoro n'a produit aucun audio.")
-
-    audio_np = np.concatenate(audio_chunks)
-
+    """Convertit du texte en audio MP3 (bytes) via Edge TTS."""
+    communicate = edge_tts.Communicate(text, VOICE)
     buf = io.BytesIO()
-    sf.write(buf, audio_np, samplerate=24000, format="WAV")
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            buf.write(chunk["data"])
     buf.seek(0)
     return buf.read()

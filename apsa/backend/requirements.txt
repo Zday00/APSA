@@ -7,8 +7,10 @@ python-multipart
 python-jose[cryptography]
 passlib[bcrypt]
 PyMuPDF
-google-generativeai
+google-genai
 openai-whisper
+edge-tts
+bcrypt==4.0.1
 torch
 torchaudio
 transformers

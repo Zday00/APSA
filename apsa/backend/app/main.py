@@ -5,7 +5,7 @@ from app.config import settings
 from app.database import Base, engine
 import app.models  # noqa — importer tous les modèles pour qu'Alembic les détecte
 
-from app.routes import auth, upload, summary, quiz, chat, analytics
+from app.routes import auth, upload, summary, quiz, chat, analytics, tts
 
 # Créer les tables si elles n'existent pas (dev only — en prod utiliser Alembic)
 Base.metadata.create_all(bind=engine)
@@ -26,6 +26,7 @@ app.include_router(summary.router)
 app.include_router(quiz.router)
 app.include_router(chat.router)
 app.include_router(analytics.router)
+app.include_router(tts.router)
 
 
 @app.get("/health")
