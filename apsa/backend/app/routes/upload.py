@@ -16,6 +16,41 @@ router = APIRouter(tags=["upload"])
 MAX_BYTES = settings.MAX_FILE_SIZE_MB * 1024 * 1024
 
 
+@router.get("/upload/{doc_id}", response_model=DocumentOut)
+def get_document(
+    doc_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    doc = db.query(Document).filter(Document.id == doc_id, Document.user_id == current_user.id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document introuvable.")
+    return DocumentOut(
+        id=doc.id,
+        filename=doc.filename,
+        page_count=doc.page_count,
+        preview_text=(doc.raw_text or "")[:500],
+        created_at=doc.created_at,
+    )
+
+
+@router.delete("/upload/{doc_id}", status_code=204)
+def delete_document(
+    doc_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    doc = db.query(Document).filter(Document.id == doc_id, Document.user_id == current_user.id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document introuvable.")
+    # Supprimer le fichier physique s'il existe
+    file_path = os.path.join(settings.UPLOAD_DIR, f"{current_user.id}_{doc.filename}")
+    if os.path.exists(file_path):
+        os.unlink(file_path)
+    db.delete(doc)
+    db.commit()
+
+
 @router.post("/upload", response_model=DocumentOut)
 async def upload_pdf(
     file: UploadFile = File(...),

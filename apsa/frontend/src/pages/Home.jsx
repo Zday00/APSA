@@ -1,12 +1,27 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import UploadZone from '../components/UploadZone'
 import SummaryView from '../components/SummaryView'
+import client from '../api/client'
 
 export default function Home() {
   const [doc, setDoc] = useState(null)
   const [activeTab, setActiveTab] = useState('summary')
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  // Si on arrive avec ?doc=X (ex: depuis le dashboard), on charge le document
+  useEffect(() => {
+    const docId = searchParams.get('doc')
+    if (docId && !doc) {
+      client.get(`/upload/${docId}`)
+        .then((r) => {
+          setDoc(r.data)
+          setActiveTab('summary')
+        })
+        .catch(() => {})
+    }
+  }, [])
 
   const handleUpload = (data) => {
     setDoc(data)

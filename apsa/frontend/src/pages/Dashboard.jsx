@@ -8,6 +8,16 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
+  const deleteDocument = async (docId) => {
+    if (!window.confirm('Supprimer ce document ? Cette action est irréversible.')) return
+    await client.delete(`/upload/${docId}`)
+    setData((prev) => ({
+      ...prev,
+      documents: prev.documents.filter((d) => d.id !== docId),
+      doc_count: prev.doc_count - 1,
+    }))
+  }
+
   useEffect(() => {
     client.get('/analytics/me')
       .then((r) => setData(r.data))
@@ -81,6 +91,13 @@ export default function Dashboard() {
                     className="text-xs px-3 py-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100"
                   >
                     Quiz
+                  </button>
+                  <button
+                    onClick={() => deleteDocument(doc.id)}
+                    className="text-xs px-3 py-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100"
+                    title="Supprimer"
+                  >
+                    ✕
                   </button>
                 </div>
               </div>
