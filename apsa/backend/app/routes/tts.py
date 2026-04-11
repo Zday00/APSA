@@ -24,8 +24,8 @@ async def text_to_speech(
     if not body.text or not body.text.strip():
         raise HTTPException(status_code=400, detail="Texte vide.")
 
-    if len(body.text) > 2000:
-        raise HTTPException(status_code=400, detail="Texte trop long (max 2000 caractères).")
+    if len(body.text) > 4000:
+        raise HTTPException(status_code=400, detail="Texte trop long (max 4000 caractères).")
 
     audio_bytes = await synthesize_speech(body.text.strip())
     return Response(content=audio_bytes, media_type="audio/mpeg")

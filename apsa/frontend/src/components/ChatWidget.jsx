@@ -90,8 +90,8 @@ export default function ChatWidget({ docId }) {
 
     setLoadingTts(idx)
     try {
-      // Appel au backend — reçoit un blob MP3
-      const response = await client.post('/tts', { text }, { responseType: 'blob' })
+      // Appel au backend — reçoit un blob MP3 (tronqué à 3500 chars)
+      const response = await client.post('/tts', { text: text.slice(0, 3500) }, { responseType: 'blob' })
       const url = URL.createObjectURL(response.data)
       const audio = new Audio(url)
       audioRef.current = audio
