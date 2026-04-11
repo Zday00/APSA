@@ -65,6 +65,12 @@ export default function Dashboard() {
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-semibold text-blue-600">{doc.avg_score}%</span>
                   <button
+                    onClick={() => navigate(`/?doc=${doc.id}`)}
+                    className="text-xs px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100"
+                  >
+                    Résumé
+                  </button>
+                  <button
                     onClick={() => navigate(`/chat?doc=${doc.id}`)}
                     className="text-xs px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
                   >
