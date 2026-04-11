@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import client from '../api/client'
+import ReactMarkdown from 'react-markdown'
 
 export default function ChatWidget({ docId }) {
   const [messages, setMessages] = useState([])
@@ -125,7 +126,9 @@ export default function ChatWidget({ docId }) {
                 ? 'bg-blue-600 text-white rounded-br-sm'
                 : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
             >
-              {m.content}
+              {m.role === 'assistant'
+                ? <ReactMarkdown className="prose prose-sm max-w-none">{m.content}</ReactMarkdown>
+                : m.content}
               {/* Bouton écouter — uniquement sur les messages de l'assistant */}
               {m.role === 'assistant' && (
                 <button
