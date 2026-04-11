@@ -14,6 +14,7 @@ bcrypt==4.0.1
 torch
 torchaudio
 transformers
+pydantic[email]
 pydantic-settings
 python-dotenv
 httpx
