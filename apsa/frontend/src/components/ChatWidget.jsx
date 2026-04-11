@@ -6,9 +6,12 @@ export default function ChatWidget({ docId }) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [recording, setRecording] = useState(false)
+  const [loadingTts, setLoadingTts] = useState(null)   // index du message en cours de chargement TTS
+  const [playingIdx, setPlayingIdx] = useState(null)   // index du message en cours de lecture
   const bottomRef = useRef(null)
   const mediaRecorderRef = useRef(null)
   const chunksRef = useRef([])
+  const audioRef = useRef(null)                        // référence à l'objet Audio en cours
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -74,6 +77,38 @@ export default function ChatWidget({ docId }) {
     setRecording(false)
   }
 
+  const speakText = async (text, idx) => {
+    // Si un audio tourne déjà, on l'arrête
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+      setPlayingIdx(null)
+      // Si on reclique sur le même message, on s'arrête juste
+      if (playingIdx === idx) return
+    }
+
+    setLoadingTts(idx)
+    try {
+      // Appel au backend — reçoit un blob MP3
+      const response = await client.post('/tts', { text }, { responseType: 'blob' })
+      const url = URL.createObjectURL(response.data)
+      const audio = new Audio(url)
+      audioRef.current = audio
+      setPlayingIdx(idx)
+      audio.play()
+      // Quand la lecture est terminée, on remet l'état à zéro
+      audio.onended = () => {
+        setPlayingIdx(null)
+        audioRef.current = null
+        URL.revokeObjectURL(url)
+      }
+    } catch {
+      // Silencieux — le bouton reprend son état normal
+    } finally {
+      setLoadingTts(null)
+    }
+  }
+
   return (
     <div className="flex flex-col h-[600px] bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       {/* Messages */}
@@ -91,6 +126,33 @@ export default function ChatWidget({ docId }) {
                 : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
             >
               {m.content}
+              {/* Bouton écouter — uniquement sur les messages de l'assistant */}
+              {m.role === 'assistant' && (
+                <button
+                  onClick={() => speakText(m.content, i)}
+                  className="mt-2 flex items-center gap-1 text-xs text-gray-400 hover:text-blue-500 transition-colors"
+                  title={playingIdx === i ? 'Arrêter' : 'Écouter'}
+                >
+                  {loadingTts === i ? (
+                    // Chargement en cours
+                    <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>
+                  ) : playingIdx === i ? (
+                    // En cours de lecture → icône stop
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                      <rect x="6" y="6" width="12" height="12" rx="1"/>
+                    </svg>
+                  ) : (
+                    // Icône speaker par défaut
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+                    </svg>
+                  )}
+                  {loadingTts === i ? 'Chargement...' : playingIdx === i ? 'Arrêter' : 'Écouter'}
+                </button>
+              )}
             </div>
           </div>
         ))}
