@@ -15,10 +15,14 @@ router = APIRouter(tags=["upload"])
 
 MAX_BYTES = settings.MAX_FILE_SIZE_MB * 1024 * 1024
 
+# Ensemble des doc_ids dont le résumé est en cours de génération
+generating_summaries: set[int] = set()
+
 def _pregenerate_summary(doc_id: int):
     from app.database import SessionLocal
     from app.services.ai_service import generate_summary
     import asyncio
+    generating_summaries.add(doc_id)
     db = SessionLocal()
     try:
         doc = db.query(Document).filter(Document.id == doc_id).first()
@@ -28,6 +32,7 @@ def _pregenerate_summary(doc_id: int):
             doc.keywords = keywords
             db.commit()
     finally:
+        generating_summaries.discard(doc_id)
         db.close()
 
 
