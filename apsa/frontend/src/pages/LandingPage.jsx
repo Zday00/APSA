@@ -56,6 +56,11 @@ export default function LandingPage() {
   const navigate        = useNavigate()
   const token           = localStorage.getItem('token')
 
+  // Redirige automatiquement un utilisateur déjà connecté vers l'app
+  useEffect(() => {
+    if (token) navigate('/home')
+  }, [])
+
   /* ── grid canvas ─────────────────────────────────────────────── */
   useEffect(() => {
     const canvas = gridRef.current
