@@ -125,13 +125,35 @@ export default function LandingPage() {
     let frame   = 0
     const particles = []
 
-    /* nodes */
+    /* nodes — cerveau VU DE PROFIL (vue latérale gauche) */
     const COLORS = ['#E85D04', '#F48C06', '#444']
-    const nodes = Array.from({ length: 13 }, (_, i) => ({
-      x:     NET_CX + (Math.random() - 0.5) * 140,
-      y:     NET_CY + (Math.random() - 0.5) * 110,
-      vx:    (Math.random() - 0.5) * 0.7,
-      vy:    (Math.random() - 0.5) * 0.7,
+    const BRAIN_POS = [
+      /* lobe frontal (avant-gauche) */
+      { hx: -62, hy: -16 },
+      /* gyri du dessus (bosses, de gauche à droite) */
+      { hx: -44, hy: -52 },
+      { hx: -18, hy: -56 },
+      { hx:   8, hy: -54 },
+      { hx:  34, hy: -50 },
+      { hx:  58, hy: -34 },
+      /* lobe occipital (arrière) */
+      { hx:  72, hy:  -4 },
+      { hx:  66, hy:  26 },
+      /* base (de l'arrière vers l'avant) */
+      { hx:  40, hy:  46 },
+      { hx:   8, hy:  48 },
+      { hx: -24, hy:  42 },
+      /* intérieur — corps calleux */
+      { hx: -10, hy: -10 },
+      { hx:  22, hy:   8 },
+    ]
+    const nodes = BRAIN_POS.map((b, i) => ({
+      x:     NET_CX + b.hx + (Math.random() - 0.5) * 6,
+      y:     NET_CY + b.hy + (Math.random() - 0.5) * 6,
+      hx:    b.hx,
+      hy:    b.hy,
+      vx:    (Math.random() - 0.5) * 0.3,
+      vy:    (Math.random() - 0.5) * 0.3,
       r:     3.5 + Math.random() * 2.5,
       phase: Math.random() * Math.PI * 2,
       color: COLORS[i % 3],
@@ -175,7 +197,7 @@ export default function LandingPage() {
         ctx.setLineDash([4, 5])
         ctx.beginPath()
         ctx.moveTo(PDF_X + PDF_W + 6, PDF_CY)
-        ctx.lineTo(NET_CX - 88, NET_CY)
+        ctx.lineTo(NET_CX - 72, NET_CY - 2)
         ctx.stroke()
         ctx.setLineDash([])
         ctx.restore()
@@ -253,35 +275,82 @@ export default function LandingPage() {
         n.x += n.vx
         n.y += n.vy
 
-        /* pull back to center if too far */
-        const dx   = n.x - NET_CX
-        const dy   = n.y - NET_CY
-        const dist = Math.hypot(dx, dy)
-        if (dist > 100) {
-          n.vx -= dx * 0.0018
-          n.vy -= dy * 0.0018
-        }
+        /* ressort vers la position d'ancrage (maintient la forme cerveau) */
+        const dx = n.x - (NET_CX + n.hx)
+        const dy = n.y - (NET_CY + n.hy)
+        n.vx -= dx * 0.005
+        n.vy -= dy * 0.005
 
-        /* repulsion between nodes */
+        /* répulsion légère entre nœuds voisins */
         nodes.forEach((other, j) => {
           if (i === j) return
           const ddx = n.x - other.x
           const ddy = n.y - other.y
           const dd  = Math.hypot(ddx, ddy)
-          if (dd < 45 && dd > 0.1) {
-            const f = 0.18 / dd
+          if (dd < 36 && dd > 0.1) {
+            const f = 0.12 / dd
             n.vx += ddx * f
             n.vy += ddy * f
           }
         })
 
-        /* clamp velocity to ±0.35 */
+        /* clamp vitesse à ±0.28 */
         const speed = Math.hypot(n.vx, n.vy)
-        if (speed > 0.35) {
-          n.vx = (n.vx / speed) * 0.35
-          n.vy = (n.vy / speed) * 0.35
+        if (speed > 0.28) {
+          n.vx = (n.vx / speed) * 0.28
+          n.vy = (n.vy / speed) * 0.28
         }
       })
+
+      /* ── contour cerveau de profil (silhouette en pointillés) ── */
+      if (pdfOpen > 0.15) {
+        const bAlpha = Math.min(1, (pdfOpen - 0.15) / 0.5) * 0.24
+        ctx.save()
+        ctx.globalAlpha = bAlpha
+        ctx.strokeStyle = '#E85D04'
+        ctx.lineWidth   = 0.9
+        ctx.setLineDash([3, 5])
+
+        /* ─ contour extérieur ─ */
+        ctx.beginPath()
+        /* départ : base avant */
+        ctx.moveTo(NET_CX - 28, NET_CY + 46)
+        /* paroi frontale montante */
+        ctx.bezierCurveTo(NET_CX - 54, NET_CY + 42, NET_CX - 70, NET_CY + 16, NET_CX - 68, NET_CY - 18)
+        /* gyrus 1 (lobe frontal) */
+        ctx.bezierCurveTo(NET_CX - 66, NET_CY - 40, NET_CX - 56, NET_CY - 54, NET_CX - 44, NET_CY - 52)
+        /* sulcus 1 */
+        ctx.bezierCurveTo(NET_CX - 34, NET_CY - 50, NET_CX - 28, NET_CY - 42, NET_CX - 18, NET_CY - 56)
+        /* gyrus 2 */
+        ctx.bezierCurveTo(NET_CX -  8, NET_CY - 58, NET_CX +  2, NET_CY - 46, NET_CX +  8, NET_CY - 54)
+        /* sulcus 2 */
+        ctx.bezierCurveTo(NET_CX + 18, NET_CY - 60, NET_CX + 28, NET_CY - 48, NET_CX + 34, NET_CY - 52)
+        /* gyrus 3 */
+        ctx.bezierCurveTo(NET_CX + 44, NET_CY - 56, NET_CX + 56, NET_CY - 46, NET_CX + 58, NET_CY - 34)
+        /* arc occipital (arrière-haut) */
+        ctx.bezierCurveTo(NET_CX + 70, NET_CY - 22, NET_CX + 76, NET_CY -  4, NET_CX + 74, NET_CY + 20)
+        /* arrière-bas */
+        ctx.bezierCurveTo(NET_CX + 70, NET_CY + 38, NET_CX + 52, NET_CY + 50, NET_CX + 30, NET_CY + 50)
+        /* base (de l'arrière vers l'avant) */
+        ctx.bezierCurveTo(NET_CX + 12, NET_CY + 52, NET_CX - 8,  NET_CY + 50, NET_CX - 28, NET_CY + 46)
+        ctx.stroke()
+
+        /* ─ quelques sulci internes (plis du cortex) ─ */
+        ctx.globalAlpha = bAlpha * 0.55
+        /* sulcus central */
+        ctx.beginPath()
+        ctx.moveTo(NET_CX + 2, NET_CY - 52)
+        ctx.bezierCurveTo(NET_CX - 2, NET_CY - 30, NET_CX + 6, NET_CY - 10, NET_CX + 4, NET_CY + 12)
+        ctx.stroke()
+        /* scissure de Sylvius */
+        ctx.beginPath()
+        ctx.moveTo(NET_CX - 55, NET_CY - 10)
+        ctx.bezierCurveTo(NET_CX - 30, NET_CY -  8, NET_CX + 5, NET_CY +  2, NET_CX + 30, NET_CY + 14)
+        ctx.stroke()
+
+        ctx.setLineDash([])
+        ctx.restore()
+      }
 
       /* connections */
       for (let i = 0; i < nodes.length; i++) {
