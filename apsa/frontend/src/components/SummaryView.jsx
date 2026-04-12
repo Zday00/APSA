@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import client from '../api/client'
 
@@ -14,8 +14,9 @@ export default function SummaryView({ docId }) {
   const [keywords, setKeywords] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  
 
-  const fetchSummary = async () => {
+  const fetchSummary = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -27,7 +28,11 @@ export default function SummaryView({ docId }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [docId, length])
+
+  useEffect(() => {
+    fetchSummary()
+  }, [fetchSummary])
 
   return (
     <div className="space-y-4">
@@ -47,7 +52,8 @@ export default function SummaryView({ docId }) {
           disabled={loading}
           className="ml-auto px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
         >
-          {loading ? 'Génération...' : summary ? 'Regénérer' : 'Générer le résumé'}
+          {loading ? 'Génération...' : summary ? 'Regénérer' : 'Générer'}
+
         </button>
       </div>
 
