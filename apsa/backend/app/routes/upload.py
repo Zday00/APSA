@@ -1,6 +1,6 @@
 import os
 import shutil
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -14,6 +14,22 @@ from app.config import settings
 router = APIRouter(tags=["upload"])
 
 MAX_BYTES = settings.MAX_FILE_SIZE_MB * 1024 * 1024
+
+def _pregenerate_summary(doc_id: int):
+    from app.database import SessionLocal
+    from app.services.ai_service import generate_summary
+    import asyncio
+    db = SessionLocal()
+    try:
+        doc = db.query(Document).filter(Document.id == doc_id).first()
+        if doc and not doc.summary_medium:
+            summary, keywords = asyncio.run(generate_summary(doc.raw_text, "medium"))
+            doc.summary_medium = summary
+            doc.keywords = keywords
+            db.commit()
+    finally:
+        db.close()
+
 
 
 @router.get("/upload/{doc_id}", response_model=DocumentOut)
@@ -53,6 +69,7 @@ def delete_document(
 
 @router.post("/upload", response_model=DocumentOut)
 async def upload_pdf(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -89,6 +106,8 @@ async def upload_pdf(
     db.add(doc)
     db.commit()
     db.refresh(doc)
+
+    background_tasks.add_task(_pregenerate_summary, doc.id)
 
     return DocumentOut(
         id=doc.id,
