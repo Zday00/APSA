@@ -78,6 +78,15 @@ export default function ChatWidget({ docId }) {
     setRecording(false)
   }
 
+  const stripMarkdown = (text) => text
+    .replace(/#{1,6}\s?/g, '')        // titres ##
+    .replace(/\*\*(.+?)\*\*/g, '$1')  // gras **texte**
+    .replace(/\*(.+?)\*/g, '$1')      // italique *texte*
+    .replace(/`(.+?)`/g, '$1')        // code `texte`
+    .replace(/[-*+]\s/g, '')          // listes - ou *
+    .replace(/\n{2,}/g, '. ')         // sauts de ligne multiples
+    .trim()
+
   const speakText = async (text, idx) => {
     // Si un audio tourne déjà, on l'arrête
     if (audioRef.current) {
@@ -90,8 +99,9 @@ export default function ChatWidget({ docId }) {
 
     setLoadingTts(idx)
     try {
-      // Appel au backend — reçoit un blob MP3 (tronqué à 3500 chars)
-      const response = await client.post('/tts', { text: text.slice(0, 3500) }, { responseType: 'blob' })
+      // Nettoyage markdown + troncature avant envoi au TTS
+      const cleanText = stripMarkdown(text).slice(0, 3500)
+      const response = await client.post('/tts', { text: cleanText }, { responseType: 'blob' })
       const url = URL.createObjectURL(response.data)
       const audio = new Audio(url)
       audioRef.current = audio
