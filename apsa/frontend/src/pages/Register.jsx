@@ -19,7 +19,7 @@ export default function Register() {
     try {
       const { data } = await client.post('/auth/register', { email: form.email, password: form.password })
       localStorage.setItem('token', data.access_token)
-      navigate('/')
+      navigate('/home')
     } catch (e) {
       setError(e.response?.data?.detail || 'Erreur lors de l\'inscription.')
     } finally {

@@ -15,7 +15,7 @@ export default function Login() {
     try {
       const { data } = await client.post('/auth/login', form)
       localStorage.setItem('token', data.access_token)
-      navigate('/')
+      navigate('/home')
     } catch (e) {
       setError(e.response?.data?.detail || 'Identifiants incorrects.')
     } finally {
