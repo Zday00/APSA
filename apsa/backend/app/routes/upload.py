@@ -1,5 +1,4 @@
 import os
-import shutil
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from sqlalchemy.orm import Session
 
@@ -9,6 +8,7 @@ from app.models.document import Document
 from app.schemas.document import DocumentOut
 from app.routes.deps import get_current_user
 from app.services.pdf_parser import extract_text
+from app.services import storage
 from app.config import settings
 
 router = APIRouter(tags=["upload"])
@@ -17,6 +17,7 @@ MAX_BYTES = settings.MAX_FILE_SIZE_MB * 1024 * 1024
 
 # Ensemble des doc_ids dont le résumé est en cours de génération
 generating_summaries: set[int] = set()
+
 
 def _pregenerate_summary(doc_id: int):
     from app.database import SessionLocal
@@ -36,7 +37,6 @@ def _pregenerate_summary(doc_id: int):
         db.close()
 
 
-
 @router.get("/upload/{doc_id}", response_model=DocumentOut)
 def get_document(
     doc_id: int,
@@ -51,6 +51,7 @@ def get_document(
         filename=doc.filename,
         page_count=doc.page_count,
         preview_text=(doc.raw_text or "")[:500],
+        file_url=doc.file_url,
         created_at=doc.created_at,
     )
 
@@ -64,10 +65,15 @@ def delete_document(
     doc = db.query(Document).filter(Document.id == doc_id, Document.user_id == current_user.id).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Document introuvable.")
-    # Supprimer le fichier physique s'il existe
+
+    # Supprimer le fichier local s'il existe
     file_path = os.path.join(settings.UPLOAD_DIR, f"{current_user.id}_{doc.filename}")
     if os.path.exists(file_path):
         os.unlink(file_path)
+
+    # Supprimer depuis Supabase Storage
+    storage.delete_pdf(current_user.id, doc_id)
+
     db.delete(doc)
     db.commit()
 
@@ -86,14 +92,15 @@ async def upload_pdf(
     if len(content) > MAX_BYTES:
         raise HTTPException(status_code=400, detail=f"Fichier trop volumineux (max {settings.MAX_FILE_SIZE_MB} MB).")
 
+    # Sauvegarde locale (nécessaire pour extract_text)
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     save_path = os.path.join(settings.UPLOAD_DIR, f"{current_user.id}_{file.filename}")
-
     with open(save_path, "wb") as f:
         f.write(content)
 
     try:
         raw_text, page_count = extract_text(save_path)
+        raw_text = raw_text.replace('\x00', '')  # PostgreSQL rejette les NUL chars
     except Exception as e:
         os.unlink(save_path)
         raise HTTPException(status_code=422, detail=f"Impossible de lire le PDF : {str(e)}")
@@ -102,6 +109,7 @@ async def upload_pdf(
         os.unlink(save_path)
         raise HTTPException(status_code=400, detail="Le PDF ne doit pas dépasser 100 pages.")
 
+    # Enregistrement en base
     doc = Document(
         user_id=current_user.id,
         filename=file.filename,
@@ -112,6 +120,12 @@ async def upload_pdf(
     db.commit()
     db.refresh(doc)
 
+    # Upload vers Supabase Storage (maintenant qu'on a le doc.id)
+    file_url = storage.upload_pdf(current_user.id, doc.id, content)
+    if file_url:
+        doc.file_url = file_url
+        db.commit()
+
     background_tasks.add_task(_pregenerate_summary, doc.id)
 
     return DocumentOut(
@@ -119,5 +133,6 @@ async def upload_pdf(
         filename=doc.filename,
         page_count=doc.page_count,
         preview_text=raw_text[:500],
+        file_url=doc.file_url,
         created_at=doc.created_at,
     )

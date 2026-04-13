@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     MAX_FILE_SIZE_MB: int = 10
     FRONTEND_URL: str = "http://localhost:5173"
     WHISPER_MODEL: str = "base"
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_SERVICE_KEY: Optional[str] = None
+    SUPABASE_BUCKET: str = "pdfs"
 
     class Config:
         env_file = ".env"

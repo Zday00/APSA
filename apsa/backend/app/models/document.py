@@ -16,6 +16,7 @@ class Document(Base):
     summary_detailed = Column(Text, nullable=True)
     keywords = Column(JSON, nullable=True)
     page_count = Column(Integer, nullable=False, default=0)
+    file_url = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     owner = relationship("User", back_populates="documents")

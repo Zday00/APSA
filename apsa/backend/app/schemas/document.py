@@ -8,6 +8,7 @@ class DocumentOut(BaseModel):
     filename: str
     page_count: int
     preview_text: str
+    file_url: Optional[str] = None
     created_at: datetime
 
     class Config:

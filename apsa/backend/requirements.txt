@@ -18,5 +18,6 @@ pydantic[email]
 pydantic-settings
 python-dotenv
 httpx
+supabase
 soundfile
 accelerate
