@@ -10,20 +10,83 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-      <Link to="/home" className="text-xl font-bold text-blue-600">APSA</Link>
-      <div className="flex items-center gap-4">
-        {token ? (
-          <>
-            <Link to="/dashboard" className="text-sm text-gray-600 hover:text-blue-600">Dashboard</Link>
-            <button onClick={logout} className="text-sm text-gray-500 hover:text-red-500">Déconnexion</button>
-          </>
-        ) : (
-          <>
-            <Link to="/login" className="text-sm text-gray-600 hover:text-blue-600">Connexion</Link>
-            <Link to="/register" className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700">Inscription</Link>
-          </>
-        )}
+    <nav style={{
+      position: 'sticky', top: 0, zIndex: 50,
+      background: 'rgba(10,10,10,.95)',
+      backdropFilter: 'blur(12px)',
+      borderBottom: '1px solid #1e1e1e',
+      height: '58px',
+      display: 'flex', alignItems: 'center',
+      padding: '0 24px',
+      flexShrink: 0,
+    }}>
+      <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+
+        {/* Logo */}
+        <Link to="/home" style={{ display: 'flex', alignItems: 'center', gap: '9px', textDecoration: 'none' }}>
+          <div style={{
+            width: '30px', height: '30px', background: '#E85D04',
+            borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+          </div>
+          <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#f5f5f5', letterSpacing: '-.01em' }}>
+            APSA
+          </span>
+        </Link>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {token ? (
+            <>
+              <Link
+                to="/dashboard"
+                style={{ color: '#777', fontSize: '.875rem', textDecoration: 'none', transition: 'color .15s' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#f5f5f5'}
+                onMouseLeave={e => e.currentTarget.style.color = '#777'}
+              >
+                Dashboard
+              </Link>
+              <button
+                onClick={logout}
+                style={{
+                  background: 'none', border: '1px solid #2a2a2a', color: '#777',
+                  fontSize: '.875rem', cursor: 'pointer', padding: '6px 14px',
+                  borderRadius: '8px', transition: 'all .15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#E85D04'; e.currentTarget.style.color = '#E85D04' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2a2a'; e.currentTarget.style.color = '#777' }}
+              >
+                Déconnexion
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                style={{ color: '#777', fontSize: '.875rem', textDecoration: 'none', transition: 'color .15s' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#f5f5f5'}
+                onMouseLeave={e => e.currentTarget.style.color = '#777'}
+              >
+                Connexion
+              </Link>
+              <Link
+                to="/register"
+                style={{
+                  background: '#E85D04', color: '#fff', fontSize: '.875rem',
+                  padding: '6px 14px', borderRadius: '8px', textDecoration: 'none',
+                  fontWeight: 600, transition: 'background .15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = '#d0520a'}
+                onMouseLeave={e => e.currentTarget.style.background = '#E85D04'}
+              >
+                Inscription
+              </Link>
+            </>
+          )}
+        </div>
       </div>
     </nav>
   )

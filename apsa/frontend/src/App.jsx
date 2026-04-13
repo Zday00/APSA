@@ -24,7 +24,7 @@ export default function App() {
           path="/*"
           element={
             <PrivateRoute>
-              <div className="min-h-screen bg-gray-50">
+              <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#f5f5f5', fontFamily: 'system-ui,-apple-system,Segoe UI,sans-serif' }}>
                 <Navbar />
                 <Routes>
                   <Route path="/home" element={<Home />} />
